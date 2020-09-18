@@ -120,18 +120,26 @@ The following psueudo code is a proposal for how `collect()` function should
 distribute bought tokens to the Integration contract when called. 
 
 ```
-contractBal = buyAsset.balanceOf(address(this)) 
-spotPrice = exchange.getSpotPriceFor(buyAsset)
-value = contactBal * spotPrice
-// If the value is less than 1000 transfer everything
-if value < 1000
-  buyAsset.transfer(contractBal, integration)
-// If the value is gt 1000 transfer a percentage of the tokens as set by governance
+// Add randomness to collection schedule
+randomMulipler = random(1..3)
+if timeSinceLastCollection > 1 hour * randomMulipler 
+    contractBal = buyAsset.balanceOf(address(this)) 
+    spotPrice = exchange.getSpotPriceFor(buyAsset)
+    value = contactBal * spotPrice
+    // If the value is less than 1000 transfer everything
+    // The 1000 value is configurable by Governance
+    if value < 1000
+      buyAsset.transfer(contractBal, integration)
+    else
+      // randomize the amount to send
+      percentToSend = rand(1..collectPercentage)
+      amountToSend = contractBal * percentToSend
+      buyAsset.transfer(amountToSend, integration)
+      timeSinceLastCollection = now
 else
-  amountToSend = contractBal * collectPercentage
-  buyAsset.transfer(amountToSend, integration)
-```
+    return error 'claimed too soon'
 
+```
 It is proposed that the `collect()` function is called at a specific time
 interval. The initial proposal is one hour. 
   
